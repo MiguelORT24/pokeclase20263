@@ -18,12 +18,12 @@ import 'package:provider/provider.dart';
 //         title: Center(child: const Text('Generaciones')
 //         ) ,
 //       ),
-//       body: FutureBuilder<http.Response>( 
+//       body: FutureBuilder<http.Response>(
 //         future: Provider.of<PokeApiProvider>(context, listen: false),getGenerations(),
 //         builder: (context, snapshot){
 //           if(snapshot.connectionState = ConnectionState.waiting){
 //             return const Center(child: CircularProgressIndicator());
-            
+
 //           }else if (snapshot.hasError){
 //             return Center(child: Text('Error: &{snashot.error}'));
 
@@ -52,44 +52,113 @@ class GenerationListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Center(child: const Text('Generaciones')),
-      ),
+      appBar: AppBar(title: Center(child: const Text('Generaciones'))),
       body: FutureBuilder<http.Response>(
-        future: Provider.of<PokeApiProvider>(context, listen: false) .getGenerations(),
-        builder:(context, snapshot) {
-          if(snapshot.connectionState == ConnectionState.waiting){
-            return const Center(child: CircularProgressIndicator(),);
-          } else if(snapshot.hasError){
-            return Center(child: Text('Error: ${snapshot.error}'),);
-          } else if(snapshot.hasData || snapshot.data!.statusCode != 200){
-            return const Center(child: Text('Failed to load generations}'),);
+        future: Provider.of<PokeApiProvider>(
+          context,
+          listen: false,
+        ).getGenerations(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.hasData && snapshot.data!.statusCode != 200) {
+            return const Center(child: Text('Failed to load generations}'));
           } else {
-            final generationListResponse = GenerationListResponse.fromJson(json.decode(snapshot.data!.body));
+            final generationListResponse = GenerationListResponse.fromJson(
+              json.decode(snapshot.data!.body),
+            );
             return ListView.separated(
               padding: const EdgeInsets.all(12),
               itemCount: generationListResponse.results.length,
               separatorBuilder: (context, index) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final generation = generationListResponse.results[index];
+                // return Card(
+                //   margin: EdgeInsets.zero,
+                //   child: ListTile(
+                //     title: Text(generation.name),
+                //     onTap: () {
+                //       Navigator.push(
+                //         context,
+                //         MaterialPageRoute(
+                //           builder: (context) => GenerationDetailScreen(generationId: index+1)
+                //         ));
+                //     }
+                //     ),
+                // );
                 return Card(
-                  margin: EdgeInsets.zero,
-                  child: ListTile(
-                    title: Text(generation.name),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  elevation: 2,
+                  color: Color(0xFFF5F4FA),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
                     onTap: () {
                       Navigator.push(
-                        context, 
+                        context,
                         MaterialPageRoute(
-                          builder: (context) => GenerationDetailScreen(generationId: index+1)
-                        ));
-                    }
+                          builder: (context) =>
+                              GenerationDetailScreen(generationId: index + 1),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.catching_pokemon, // ícono de la tarjetona -----
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              generation.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: Colors.grey.shade400,
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
                 );
+                //-------------------------------------------------------------------------------------------------------
               },
             );
           }
         },
-      )
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pokeclase20263/providers/poke_api_provider.dart';
 import 'package:pokeclase20263/screens/generation_list_screen.dart';
@@ -24,13 +25,11 @@ class AppState extends StatelessWidget {
 
 const _KPrimary = Color(0xFF5345AB);
 const _KSecondary = Color(0xFFE5D36D);
-const _KSurfaceVariant = Color(0xFFB8DD5);
+const _KSurfaceVariant = Color(0xFFB8BDD5);
 const _KDark = Color(0xFF1E2240);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-
 
   Widget build(BuildContext context) {
     return MaterialApp(
