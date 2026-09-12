@@ -17,4 +17,11 @@ class PokeApiProvider extends ChangeNotifier {
     final response = await http.get(url);
     return response;
   }
+
+  // Nuevo: trae detalle del Pokémon, incluyendo 'types'
+  Future<http.Response> getPokemonDetail(int id) async {
+    final url = Uri.https(_baseUrl, '$_apiPatch/pokemon/$id');
+    final response = await http.get(url);
+    return response;
+  }
 }

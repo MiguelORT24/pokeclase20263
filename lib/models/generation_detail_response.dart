@@ -64,4 +64,6 @@ class PokemonSpeciesItem{
       final segments = uri.pathSegments.where((s)=>s.isNotEmpty).toList();
       return int.parse(segments.last);
     }
+
+  get types => null;
   }
