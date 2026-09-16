@@ -24,4 +24,11 @@ class PokeApiProvider extends ChangeNotifier {
     final response = await http.get(url);
     return response;
   }
+
+  //
+  Future<http.Response> getPokemonSpecies(int id) async {
+    final url = Uri.https(_baseUrl, '$_apiPatch/pokemon-species/$id');
+    final response = await http.get(url);
+    return response;
+  }
 }
