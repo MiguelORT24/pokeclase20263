@@ -1,13 +1,39 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:pokeclase20263/models/generation_detail_response.dart';
 import 'package:pokeclase20263/providers/poke_api_provider.dart';
 import 'package:pokeclase20263/screens/pokemon_detail_screen.dart';
 
-class GenerationDetailScreen extends StatelessWidget {
+class GenerationDetailScreen extends StatefulWidget {
   final int generationId;
 
-  const GenerationDetailScreen({Key? key, required this.generationId})
-    : super(key: key);
+  const GenerationDetailScreen({super.key, required this.generationId});
+
+  @override
+  State<GenerationDetailScreen> createState() => _GenerationDetailScreenState();
+}
+
+class _GenerationDetailScreenState extends State<GenerationDetailScreen> {
+  late Future<http.Response> _generation;
+
+  @override
+  void initState() {
+    super.initState();
+    _generation = context.read<PokeApiProvider>().getGenerationDetail(
+      widget.generationId,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant GenerationDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.generationId != widget.generationId) {
+      _generation = context.read<PokeApiProvider>().getGenerationDetail(
+        widget.generationId,
+      );
+    }
+  }
 
   String _spriteUrl(int id) =>
       'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png';
@@ -17,9 +43,9 @@ class GenerationDetailScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      appBar: AppBar(title: Text('Generación $generationId')),
+      appBar: AppBar(title: Text('Generación ${widget.generationId}')),
       body: FutureBuilder(
-        future: PokeApiProvider().getGenerationDetail(generationId),
+        future: _generation,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -30,7 +56,8 @@ class GenerationDetailScreen extends StatelessWidget {
           } else {
             final generationDetailResponse =
                 GenerationDetailResponse.fromRawJson(snapshot.data!.body);
-            final speciesList = generationDetailResponse.pokemonSpecies;
+            final speciesList = generationDetailResponse.pokemonSpecies
+              ..sort((a, b) => a.id.compareTo(b.id));
             return GridView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: speciesList.length,
@@ -43,28 +70,6 @@ class GenerationDetailScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final species = speciesList[index];
 
-                //-------------------------------------------------------------------------------------------
-
-                // return _PokemonCard(
-                //   id: species.id,
-                //   name: species.name,
-                //   imageUrl: _spriteUrl(species.id),
-                //   colorScheme: (species.types?.isNotEmpty ?? false)
-                //       ? colorSchemeForType(species.types!.first)
-                //       : colorSchemeForType('normal'),
-                //   onTap: () {
-                //     Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (context) => PokemonDetailScreen(
-                //           pokemonId: species.id,
-                //           pokemonName: species.name,
-                //         ),
-                //       ),
-                //     );
-                //   },
-                // );
-
                 return _PokemonCard(
                   id: species.id,
                   name: species.name,
@@ -74,13 +79,15 @@ class GenerationDetailScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PokemonDetailScreen(pokemonId: species.id, pokemonName: species.name),
+                        builder: (context) => PokemonDetailScreen(
+                          pokemonId: species.id,
+                          pokemonName: species.name,
+                          pokemonList: speciesList,
+                        ),
                       ),
                     );
                   },
                 );
-
-                //-------------------------------------------------------------------------------------------
               },
             );
           }
@@ -141,22 +148,25 @@ class _PokemonCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Expanded(
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    Icons.catching_pokemon,
-                    color: colorScheme.secondary,
+                child: Hero(
+                  tag: 'pokemon-$id',
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.catching_pokemon,
+                      color: colorScheme.secondary,
+                    ),
                   ),
                 ),
               ),

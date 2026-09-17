@@ -3,16 +3,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:pokeclase20263/models/generation_detail_response.dart';
 import 'package:pokeclase20263/providers/poke_api_provider.dart';
 import 'package:pokeclase20263/screens/pokemon_type_theme.dart';
+import 'package:pokeclase20263/screens/pokemon_evolution_panel.dart';
 
 class PokemonDetailScreen extends StatefulWidget {
   final int pokemonId;
   final String pokemonName;
+  final List<PokemonSpeciesItem>? pokemonList;
   const PokemonDetailScreen({
     super.key,
     required this.pokemonId,
     required this.pokemonName,
+    this.pokemonList,
   });
 
   @override
@@ -20,6 +24,65 @@ class PokemonDetailScreen extends StatefulWidget {
 }
 
 class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
+  late final List<PokemonSpeciesItem> _pokemon;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    final byId = {
+      for (final pokemon in widget.pokemonList ?? <PokemonSpeciesItem>[])
+        pokemon.id: pokemon,
+    };
+    byId.putIfAbsent(
+      widget.pokemonId,
+      () => PokemonSpeciesItem(
+        name: widget.pokemonName,
+        url: 'https://pokeapi.co/api/v2/pokemon-species/${widget.pokemonId}/',
+      ),
+    );
+    _pokemon = byId.values.toList()..sort((a, b) => a.id.compareTo(b.id));
+    _pageController = PageController(
+      initialPage: _pokemon.indexWhere((p) => p.id == widget.pokemonId),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => PageView.builder(
+    controller: _pageController,
+    itemCount: _pokemon.length,
+    itemBuilder: (context, index) {
+      final pokemon = _pokemon[index];
+      return _PokemonDetailPage(
+        key: ValueKey(pokemon.id),
+        pokemonId: pokemon.id,
+        pokemonName: pokemon.name,
+      );
+    },
+  );
+}
+
+class _PokemonDetailPage extends StatefulWidget {
+  final int pokemonId;
+  final String pokemonName;
+
+  const _PokemonDetailPage({
+    super.key,
+    required this.pokemonId,
+    required this.pokemonName,
+  });
+
+  @override
+  State<_PokemonDetailPage> createState() => _PokemonDetailPageState();
+}
+
+class _PokemonDetailPageState extends State<_PokemonDetailPage> {
   late Future<(Map<String, dynamic>, Map<String, dynamic>)> _details;
 
   @override
@@ -29,7 +92,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   }
 
   @override
-  void didUpdateWidget(covariant PokemonDetailScreen oldWidget) {
+  void didUpdateWidget(covariant _PokemonDetailPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.pokemonId != widget.pokemonId) _details = _load();
   }
@@ -70,44 +133,107 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           .toList();
       final colors = colorSchemeForType(types.firstOrNull ?? 'normal');
       return Theme(
-        data: Theme.of(context).copyWith(colorScheme: colors),
+        data: ThemeData(useMaterial3: true, colorScheme: colors),
         child: Scaffold(
-          backgroundColor: colors.surface,
+          backgroundColor: colors.primaryContainer,
           appBar: AppBar(
             title: Text(_name(widget.pokemonName)),
-            backgroundColor: colors.primary,
-            foregroundColor: colors.onPrimary,
+            backgroundColor: colors.primaryContainer,
+            foregroundColor: colors.onSurface,
+            elevation: 0,
+            scrolledUnderElevation: 0,
           ),
-          body: snapshot.connectionState != ConnectionState.done
-              ? const Center(child: CircularProgressIndicator())
-              : snapshot.hasError || pokemon == null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.wifi_off_rounded, size: 48),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No se pudieron cargar los detalles. Inténtalo de nuevo.',
-                          textAlign: TextAlign.center,
+          body: AnimatedContainer(
+            duration: const Duration(milliseconds: 350),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colors.primaryContainer,
+                  colors.surface,
+                  colors.secondaryContainer,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: SingleChildScrollView(
+                key: PageStorageKey(widget.pokemonId),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Hero(
+                        tag: 'pokemon-${widget.pokemonId}',
+                        child: SizedBox(
+                          height: 250,
+                          child: Image.network(
+                            'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${widget.pokemonId}.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.catching_pokemon,
+                              size: 100,
+                              color: colors.primary,
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _details = _load();
-                            });
-                          },
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Reintentar'),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                )
-              : _content(pokemon, snapshot.data!.$2, types, colors),
+                    Container(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.sizeOf(context).height * 0.55,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(36),
+                        ),
+                      ),
+                      padding: EdgeInsets.only(
+                        top: 24,
+                        bottom: MediaQuery.paddingOf(context).bottom + 24,
+                      ),
+                      child: snapshot.connectionState != ConnectionState.done
+                          ? const Center(child: CircularProgressIndicator())
+                          : snapshot.hasError || pokemon == null
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.wifi_off_rounded,
+                                      size: 48,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'No se pudieron cargar los detalles. Inténtalo de nuevo.',
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    FilledButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          _details = _load();
+                                        });
+                                      },
+                                      icon: const Icon(Icons.refresh),
+                                      label: const Text('Reintentar'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : _content(pokemon, snapshot.data!.$2, types, colors),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       );
     },
@@ -119,11 +245,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
     List<String> types,
     ColorScheme colors,
   ) {
-    final sprites = pokemon['sprites'];
-    final image =
-        sprites?['other']?['official-artwork']?['front_default'] ??
-        sprites?['front_default'];
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(16),
       child: Center(
         child: ConstrainedBox(
@@ -139,30 +261,6 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                     color: colors.primary,
                     fontWeight: FontWeight.bold,
                   ),
-                ),
-                SizedBox(
-                  height: 220,
-                  child: image == null
-                      ? Icon(
-                          Icons.catching_pokemon,
-                          size: 100,
-                          color: colors.primary,
-                        )
-                      : Image.network(
-                          image as String,
-                          fit: BoxFit.contain,
-                          loadingBuilder: (context, child, progress) =>
-                              progress == null
-                              ? child
-                              : const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.catching_pokemon,
-                            size: 100,
-                            color: colors.primary,
-                          ),
-                        ),
                 ),
                 Text(
                   _name(widget.pokemonName),
@@ -190,6 +288,12 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                   ],
                 ),
               ]),
+              PokemonEvolutionPanel(
+                key: ValueKey(widget.pokemonId),
+                chainUrl: species['evolution_chain']?['url'] as String?,
+                selectedId: widget.pokemonId,
+              ),
+              const SizedBox(height: 24),
               _section(colors, [
                 _heading('Acerca de'),
                 Text(_description(species)),
@@ -276,17 +380,11 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
     ),
   );
 
-  Widget _section(ColorScheme colors, List<Widget> children) => Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    elevation: 2,
-    color: colors.surfaceContainerLowest,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
+  Widget _section(ColorScheme colors, List<Widget> children) => Padding(
+    padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     ),
   );
 
