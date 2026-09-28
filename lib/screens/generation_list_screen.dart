@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:pokeclase20263/models/generation_list_response.dart';
@@ -8,18 +7,35 @@ import 'package:pokeclase20263/providers/poke_api_provider.dart';
 import 'package:pokeclase20263/screens/generation_detail_screen.dart';
 import 'package:provider/provider.dart';
 
-class GenerationListScreen extends StatelessWidget {
-  const GenerationListScreen({super.key});
+class GenerationListScreen extends StatefulWidget {
+  final bool embedded;
+  const GenerationListScreen({super.key, this.embedded = false});
+
+  @override
+  State<GenerationListScreen> createState() => _GenerationListScreenState();
+}
+
+class _GenerationListScreenState extends State<GenerationListScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  late final Future<http.Response> _generations;
+
+  @override
+  void initState() {
+    super.initState();
+    _generations = context.read<PokeApiProvider>().getGenerations();
+  }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
-      appBar: AppBar(title: Center(child: const Text('Generaciones'))),
+      appBar: widget.embedded
+          ? null
+          : AppBar(title: const Text('Generaciones')),
       body: FutureBuilder<http.Response>(
-        future: Provider.of<PokeApiProvider>(
-          context,
-          listen: false,
-        ).getGenerations(),
+        future: _generations,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -37,7 +53,7 @@ class GenerationListScreen extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final generation = generationListResponse.results[index];
-                
+
                 //-------------------------------------------------------------------------------------------------------------------
                 return Card(
                   margin: const EdgeInsets.symmetric(

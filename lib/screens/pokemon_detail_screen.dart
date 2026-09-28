@@ -147,8 +147,8 @@ class _PokemonDetailPageState extends State<_PokemonDetailPage> {
             duration: const Duration(milliseconds: 350),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: [
                   colors.primaryContainer,
                   colors.surface,

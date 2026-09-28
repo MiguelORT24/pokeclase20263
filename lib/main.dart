@@ -1,10 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pokeclase20263/providers/poke_api_provider.dart';
-import 'package:pokeclase20263/screens/generation_list_screen.dart';
+import 'package:pokeclase20263/screens/pokedex_screen.dart';
 import 'package:provider/provider.dart';
 
-void main()=> runApp(const AppState());
+void main() => runApp(const AppState());
 
 class AppState extends StatelessWidget {
   const AppState({super.key});
@@ -13,10 +12,7 @@ class AppState extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => PokeApiProvider(),
-          lazy: false,
-        ),
+        ChangeNotifierProvider(create: (_) => PokeApiProvider(), lazy: false),
       ],
       child: MyApp(),
     );
@@ -38,7 +34,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: _KSurfaceVariant,
-        colorScheme: const  ColorScheme.dark(
+        colorScheme: const ColorScheme.dark(
           primary: _KPrimary,
           onPrimary: Colors.white,
           secondary: _KSecondary,
@@ -59,12 +55,9 @@ class MyApp extends StatelessWidget {
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: _KPrimary,
           foregroundColor: _KDark,
-        ), 
+        ),
       ),
-      home: const GenerationListScreen(
-        
-      ),
+      home: const PokedexScreen(),
     );
-  
   }
 }
